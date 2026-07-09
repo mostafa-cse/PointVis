@@ -175,6 +175,37 @@ function updateOrigin() {
     originY = height / 2 + offsetY;
 }
 
+function handleManualPointAdd() {
+    const val = manualPointInput.value.trim();
+    if (!val) return;
+    
+    // Split by comma or space
+    const parts = val.split(/[,\s]+/);
+    if (parts.length >= 2) {
+        const x = parseFloat(parts[0]);
+        const y = parseFloat(parts[1]);
+        if (!isNaN(x) && !isNaN(y)) {
+            // Check if point already exists
+            const existing = points.find(p => p.x === x && p.y === y);
+            if (existing) {
+                setMode('line');
+                connectingPointId = existing.id;
+            } else {
+                points.push({
+                    id: nextPointId++,
+                    x: x,
+                    y: y,
+                    color: config.colors.point
+                });
+            }
+            manualPointInput.value = '';
+            draw();
+            updateSidebar();
+            updateStatusHint();
+        }
+    }
+}
+
 // Coordinate transforms
 function screenToMath(sx, sy) {
     const mx = (sx - originX) / config.gridSize;
