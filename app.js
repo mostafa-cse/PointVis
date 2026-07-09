@@ -39,7 +39,8 @@ const config = {
 
 let points = []; // Array of {x, y, id, color}
 let lines = [];  // Array of {p1, p2, type}
-let circles = []; // Array of {id, cx, cy, r, color}
+let circles = []; // Array of {id, pointId, r, color}
+let circleCenterPointId = null; // ID of the point selected as circle center
 let polygons = []; // Array of {id, points: [id1, id2...], color}
 let pendingPolygonPoints = []; // Array of point IDs
 
@@ -119,6 +120,7 @@ function setMode(mode) {
     
     connectingPointId = null;
     transformSourcePointId = null;
+    circleCenterPointId = null;
     pendingPolygonPoints = [];
     updateStatusHint();
     draw();
@@ -129,7 +131,7 @@ function updateStatusHint() {
         add: 'Click on the grid to place a point.',
         line: connectingPointId ? 'Click a second point to complete the line.' : 'Click on a point to start a line.',
         polygon: pendingPolygonPoints.length === 0 ? 'Click points to define polygon vertices.' : `${pendingPolygonPoints.length} vertices selected. Click first point to close.`,
-        circle: 'Click a point to set the circle center.',
+        circle: circleCenterPointId ? 'Move to set radius, then click to confirm.' : 'Click a point to set the circle center.',
         reflect: transformSourcePointId ? 'Click the mirror center point.' : 'Click the point to reflect.',
         dilate: transformSourcePointId ? 'Click the center of dilation.' : 'Click the point to dilate.',
         move: 'Drag points to reposition. Drag empty space to pan.'
@@ -543,6 +545,52 @@ function drawCircles() {
         ctx.lineWidth = 2;
         ctx.stroke();
     });
+    
+    // Draw pending circle preview
+    if (currentMode === 'circle' && circleCenterPointId !== null && hoverScreenCoords) {
+        const centerPt = points.find(p => p.id === circleCenterPointId);
+        if (centerPt) {
+            const s = mathToScreen(centerPt.x, centerPt.y);
+            const hoverMath = screenToMath(hoverScreenCoords.x, hoverScreenCoords.y);
+            const r = Math.hypot(hoverMath.x - centerPt.x, hoverMath.y - centerPt.y);
+            const screenRadius = r * config.gridSize;
+            
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, screenRadius, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(14, 165, 233, 0.1)';
+            ctx.fill();
+            ctx.strokeStyle = config.colors.point;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Draw radius label
+            const midX = (s.x + hoverScreenCoords.x) / 2;
+            const midY = (s.y + hoverScreenCoords.y) / 2;
+            ctx.font = '12px monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const rText = `r: ${r.toFixed(2)}`;
+            const textW = ctx.measureText(rText).width;
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+            ctx.beginPath();
+            ctx.roundRect(midX - textW/2 - 4, midY - 10, textW + 8, 20, 4);
+            ctx.fill();
+            ctx.fillStyle = config.colors.text;
+            ctx.fillText(rText, midX, midY);
+            
+            // Draw dashed radius line
+            ctx.beginPath();
+            ctx.setLineDash([4, 4]);
+            ctx.moveTo(s.x, s.y);
+            ctx.lineTo(hoverScreenCoords.x, hoverScreenCoords.y);
+            ctx.strokeStyle = 'rgba(148, 163, 184, 0.5)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+    }
 }
 
 function drawPolygons() {
@@ -780,17 +828,45 @@ function handleCanvasClick(e) {
         }
     } else if (currentMode === 'circle') {
         if (clickedPoint) {
-            const rStr = prompt("Enter circle radius:");
-            if (rStr !== null && !isNaN(rStr) && rStr.trim() !== '') {
-                const r = parseFloat(rStr);
-                circles.push({
-                    id: Math.random(),
-                    pointId: clickedPoint.id,
-                    r: r,
-                    color: clickedPoint.color || config.colors.point
-                });
-                draw();
+            if (circleCenterPointId === null) {
+                // First click: set the center
+                circleCenterPointId = clickedPoint.id;
+            } else {
+                // Second click on a point: use distance as radius
+                const centerPt = points.find(p => p.id === circleCenterPointId);
+                if (centerPt) {
+                    const r = Math.hypot(clickedPoint.x - centerPt.x, clickedPoint.y - centerPt.y);
+                    if (r > 0) {
+                        circles.push({
+                            id: Math.random(),
+                            pointId: circleCenterPointId,
+                            r: r,
+                            color: centerPt.color || config.colors.point
+                        });
+                    }
+                }
+                circleCenterPointId = null;
             }
+            draw();
+            updateStatusHint();
+        } else if (circleCenterPointId !== null) {
+            // Second click on empty space: use cursor distance as radius
+            const centerPt = points.find(p => p.id === circleCenterPointId);
+            if (centerPt) {
+                const hoverMath = screenToMath(clickX, clickY);
+                const r = Math.hypot(hoverMath.x - centerPt.x, hoverMath.y - centerPt.y);
+                if (r > 0) {
+                    circles.push({
+                        id: Math.random(),
+                        pointId: circleCenterPointId,
+                        r: r,
+                        color: centerPt.color || config.colors.point
+                    });
+                }
+            }
+            circleCenterPointId = null;
+            draw();
+            updateStatusHint();
         }
     } else if (currentMode === 'polygon') {
         if (clickedPoint) {
@@ -985,9 +1061,10 @@ function handleMouseMove(e) {
         tooltip.classList.remove('hidden');
     }
     
-    // Redraw to update temporary line or polygon preview
+    // Redraw to update temporary line, polygon preview, or circle preview
     if ((currentMode === 'line' && connectingPointId !== null) ||
-        (currentMode === 'polygon' && pendingPolygonPoints.length > 0)) {
+        (currentMode === 'polygon' && pendingPolygonPoints.length > 0) ||
+        (currentMode === 'circle' && circleCenterPointId !== null)) {
         needsRedraw = true;
     }
     
