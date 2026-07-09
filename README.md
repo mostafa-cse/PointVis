@@ -1,4 +1,4 @@
-# Coordinate Canvas
+# PointVis
 
 A web-based interactive Coordinate Plane visualizer and geometry engine built with HTML5 Canvas, Vanilla JavaScript, and CSS.
 
