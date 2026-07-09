@@ -15,6 +15,7 @@ const lineTypeSelect = document.getElementById('line-type');
 const bestFitToggle = document.getElementById('best-fit-toggle');
 const toggleSidebarBtn = document.getElementById('toggle-sidebar');
 const sidebar = document.getElementById('sidebar');
+const statusHint = document.getElementById('status-hint');
 
 // Configuration
 const config = {
@@ -115,7 +116,27 @@ function setMode(mode) {
     connectingPointId = null;
     transformSourcePointId = null;
     pendingPolygonPoints = [];
+    updateStatusHint();
     draw();
+}
+
+function updateStatusHint() {
+    const hints = {
+        add: 'Click on the grid to place a point.',
+        line: connectingPointId ? 'Click a second point to complete the line.' : 'Click on a point to start a line.',
+        polygon: pendingPolygonPoints.length === 0 ? 'Click points to define polygon vertices.' : `${pendingPolygonPoints.length} vertices selected. Click first point to close.`,
+        circle: 'Click a point to set the circle center.',
+        reflect: transformSourcePointId ? 'Click the mirror center point.' : 'Click the point to reflect.',
+        dilate: transformSourcePointId ? 'Click the center of dilation.' : 'Click the point to dilate.',
+        move: 'Drag points to reposition. Drag empty space to pan.'
+    };
+    const text = hints[currentMode] || '';
+    if (text) {
+        statusHint.textContent = text;
+        statusHint.classList.remove('hidden');
+    } else {
+        statusHint.classList.add('hidden');
+    }
 }
 
 function resizeCanvas() {
@@ -283,49 +304,49 @@ function drawLines() {
             const s1 = mathToScreen(p1.x, p1.y);
             const s2 = mathToScreen(p2.x, p2.y);
             ctx.beginPath();
-        
-        let drawP1 = { x: s1.x, y: s1.y };
-        let drawP2 = { x: s2.x, y: s2.y };
-        const type = line.type || 'segment';
-        
-        const dx = s2.x - s1.x;
-        const dy = s2.y - s1.y;
-        const angle = Math.atan2(dy, dx);
-        
-        if (type === 'line' || type === 'ray') {
-            const inf = 5000;
-            drawP2.x = s2.x + Math.cos(angle) * inf;
-            drawP2.y = s2.y + Math.sin(angle) * inf;
             
-            if (type === 'line') {
-                drawP1.x = s1.x - Math.cos(angle) * inf;
-                drawP1.y = s1.y - Math.sin(angle) * inf;
+            let drawP1 = { x: s1.x, y: s1.y };
+            let drawP2 = { x: s2.x, y: s2.y };
+            const type = line.type || 'segment';
+            
+            const dx = s2.x - s1.x;
+            const dy = s2.y - s1.y;
+            const angle = Math.atan2(dy, dx);
+            
+            if (type === 'line' || type === 'ray') {
+                const inf = 5000;
+                drawP2.x = s2.x + Math.cos(angle) * inf;
+                drawP2.y = s2.y + Math.sin(angle) * inf;
+                
+                if (type === 'line') {
+                    drawP1.x = s1.x - Math.cos(angle) * inf;
+                    drawP1.y = s1.y - Math.sin(angle) * inf;
+                }
+            } else if (type === 'perp-bisector') {
+                const inf = 5000;
+                const midX = (s1.x + s2.x) / 2;
+                const midY = (s1.y + s2.y) / 2;
+                const perpAngle = angle + Math.PI / 2;
+                
+                drawP1.x = midX - Math.cos(perpAngle) * inf;
+                drawP1.y = midY - Math.sin(perpAngle) * inf;
+                drawP2.x = midX + Math.cos(perpAngle) * inf;
+                drawP2.y = midY + Math.sin(perpAngle) * inf;
             }
-        } else if (type === 'perp-bisector') {
-            const inf = 5000;
-            const midX = (s1.x + s2.x) / 2;
-            const midY = (s1.y + s2.y) / 2;
-            const perpAngle = angle + Math.PI / 2;
             
-            drawP1.x = midX - Math.cos(perpAngle) * inf;
-            drawP1.y = midY - Math.sin(perpAngle) * inf;
-            drawP2.x = midX + Math.cos(perpAngle) * inf;
-            drawP2.y = midY + Math.sin(perpAngle) * inf;
-        }
-        
-        ctx.moveTo(drawP1.x, drawP1.y);
-        ctx.lineTo(drawP2.x, drawP2.y);
-        ctx.stroke();
-        
-        if (type === 'vector') {
-            const headlen = 12;
-            ctx.beginPath();
-            ctx.moveTo(s2.x, s2.y);
-            ctx.lineTo(s2.x - headlen * Math.cos(angle - Math.PI / 6), s2.y - headlen * Math.sin(angle - Math.PI / 6));
-            ctx.moveTo(s2.x, s2.y);
-            ctx.lineTo(s2.x - headlen * Math.cos(angle + Math.PI / 6), s2.y - headlen * Math.sin(angle + Math.PI / 6));
+            ctx.moveTo(drawP1.x, drawP1.y);
+            ctx.lineTo(drawP2.x, drawP2.y);
             ctx.stroke();
-        }
+            
+            if (type === 'vector') {
+                const headlen = 12;
+                ctx.beginPath();
+                ctx.moveTo(s2.x, s2.y);
+                ctx.lineTo(s2.x - headlen * Math.cos(angle - Math.PI / 6), s2.y - headlen * Math.sin(angle - Math.PI / 6));
+                ctx.moveTo(s2.x, s2.y);
+                ctx.lineTo(s2.x - headlen * Math.cos(angle + Math.PI / 6), s2.y - headlen * Math.sin(angle + Math.PI / 6));
+                ctx.stroke();
+            }
             
             // Calculate and draw distance
             const distance = Math.hypot(p2.x - p1.x, p2.y - p1.y).toFixed(2);
@@ -479,7 +500,9 @@ function drawBestFitLine() {
     ctx.textBaseline = 'bottom';
     
     // Draw background pill for text readability
-    const eqText = `y = ${m.toFixed(2)}x + ${b.toFixed(2)}`;
+    const bSign = b >= 0 ? '+' : '−';
+    const bAbs = Math.abs(b).toFixed(2);
+    const eqText = `y = ${m.toFixed(2)}x ${bSign} ${bAbs}`;
     const textWidth = ctx.measureText(eqText).width;
     ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
     ctx.beginPath();
@@ -492,7 +515,11 @@ function drawBestFitLine() {
 
 function drawCircles() {
     circles.forEach(c => {
-        const s = mathToScreen(c.cx, c.cy);
+        // Look up the center point by ID so circles follow point moves
+        const centerPt = points.find(p => p.id === c.pointId);
+        if (!centerPt) return;
+        
+        const s = mathToScreen(centerPt.x, centerPt.y);
         const screenRadius = c.r * config.gridSize;
         
         ctx.beginPath();
@@ -745,6 +772,7 @@ function handleCanvasClick(e) {
                 connectingPointId = null; // clicked same point, cancel
             }
             draw();
+            updateStatusHint();
         }
     } else if (currentMode === 'circle') {
         if (clickedPoint) {
@@ -753,8 +781,7 @@ function handleCanvasClick(e) {
                 const r = parseFloat(rStr);
                 circles.push({
                     id: Math.random(),
-                    cx: clickedPoint.x,
-                    cy: clickedPoint.y,
+                    pointId: clickedPoint.id,
                     r: r,
                     color: clickedPoint.color || config.colors.point
                 });
@@ -775,6 +802,7 @@ function handleCanvasClick(e) {
                 pendingPolygonPoints.push(clickedPoint.id);
             }
             draw();
+            updateStatusHint();
         }
     } else if (currentMode === 'reflect') {
         if (clickedPoint) {
@@ -789,16 +817,19 @@ function handleCanvasClick(e) {
                     const newX = 2 * centerPoint.x - sourcePoint.x;
                     const newY = 2 * centerPoint.y - sourcePoint.y;
                     
-                    points.push({
+                    const newPt = {
                         x: newX,
                         y: newY,
                         id: nextPointId++,
                         color: sourcePoint.color
-                    });
+                    };
+                    points.push(newPt);
+                    updateSidebar();
                 }
                 transformSourcePointId = null;
             }
             draw();
+            updateStatusHint();
         }
     } else if (currentMode === 'dilate') {
         if (clickedPoint) {
@@ -816,17 +847,20 @@ function handleCanvasClick(e) {
                         const newX = centerPoint.x + k * (sourcePoint.x - centerPoint.x);
                         const newY = centerPoint.y + k * (sourcePoint.y - centerPoint.y);
                         
-                        points.push({
+                        const newPt = {
                             x: newX,
                             y: newY,
                             id: nextPointId++,
                             color: sourcePoint.color
-                        });
+                        };
+                        points.push(newPt);
+                        updateSidebar();
                     }
                 }
                 transformSourcePointId = null;
             }
             draw();
+            updateStatusHint();
         }
     } else if (currentMode === 'move') {
     }
@@ -926,9 +960,9 @@ function handleMouseMove(e) {
             items.forEach(item => item.classList.remove('hover-highlight'));
         }
         
-        if (currentMode === 'add') {
+        if (currentMode === 'add' || currentMode === 'polygon' || currentMode === 'circle') {
             canvas.style.cursor = 'crosshair';
-        } else if (['line', 'circle', 'polygon', 'reflect', 'dilate'].includes(currentMode)) {
+        } else if (['line', 'reflect', 'dilate'].includes(currentMode)) {
             canvas.style.cursor = 'default';
         } else if (currentMode === 'move') {
             canvas.style.cursor = isPanning ? 'grabbing' : 'grab';
@@ -937,8 +971,9 @@ function handleMouseMove(e) {
         tooltip.classList.add('hidden');
     }
     
-    // If we're drawing a line, redraw to update temporary line
-    if (currentMode === 'line' && connectingPointId !== null) {
+    // Redraw to update temporary line or polygon preview
+    if ((currentMode === 'line' && connectingPointId !== null) ||
+        (currentMode === 'polygon' && pendingPolygonPoints.length > 0)) {
         needsRedraw = true;
     }
     
@@ -1103,10 +1138,14 @@ function highlightPoint(id, isHighlight) {
 function removePoint(id) {
     points = points.filter(p => p.id !== id);
     lines = lines.filter(l => l.p1 !== id && l.p2 !== id);
+    circles = circles.filter(c => c.pointId !== id);
+    polygons = polygons.filter(poly => !poly.points.includes(id));
+    pendingPolygonPoints = pendingPolygonPoints.filter(pid => pid !== id);
     
     if (hoveredPointId === id) hoveredPointId = null;
     if (draggingPointId === id) draggingPointId = null;
     if (connectingPointId === id) connectingPointId = null;
+    if (transformSourcePointId === id) transformSourcePointId = null;
     
     draw();
     updateSidebar();
@@ -1115,10 +1154,14 @@ function removePoint(id) {
 function clearPoints() {
     points = [];
     lines = [];
+    circles = [];
+    polygons = [];
+    pendingPolygonPoints = [];
     nextPointId = 1;
     hoveredPointId = null;
     draggingPointId = null;
     connectingPointId = null;
+    transformSourcePointId = null;
     draw();
     updateSidebar();
 }
@@ -1126,7 +1169,7 @@ function clearPoints() {
 // Exports
 document.getElementById('exportImageBtn').addEventListener('click', () => {
     const link = document.createElement('a');
-    link.download = 'coordinate-graph.png';
+    link.download = 'pointvis-export.png';
     // Draw background before exporting
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = canvas.width;
@@ -1152,7 +1195,7 @@ document.getElementById('exportCsvBtn').addEventListener('click', () => {
     link.click();
 });
 
-document.getElementById('clearBtn').addEventListener('click', clearPoints);
+// Duplicate clearBtn listener removed (already attached in init())
 
 // Start
 init();

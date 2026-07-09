@@ -85,23 +85,10 @@ body {
     background: rgba(255,255,255,0.1);
 }
 
-.sidebar.collapsed ~ .toggle-btn {
-    /* If we want the button to stay on the edge, we can leave this.
-       But since it's an absolute child of app-container, it stays fixed! 
-       Wait, the toggle btn is *before* the sidebar in HTML. 
-       Let's use a sibling selector `~` if needed.
-       Actually, if it's position absolute, it stays at left: 16px. 
-       Wait, if it's at left: 16px, it covers the sidebar. 
-       Let's put it at left: 334px (350 - 16) when open, or just inside the sidebar?
-       No, if it's inside the sidebar, it moves with it. That's easiest! */
-}
-/* Re-doing the approach: The button is fixed relative to the app container. 
-   Let's make it follow the sidebar! */
 .toggle-btn {
-    left: 326px; /* 350px width - 24px half-width */
+    left: 326px;
 }
 
-/* We need a wrapper to make the sibling selector work properly, or just use JS to toggle class on the button too */
 .toggle-btn.collapsed {
     left: 16px;
 }
@@ -314,6 +301,55 @@ body {
     font-size: 0.85rem;
     margin-left: auto;
     margin-right: 12px;
+}
+
+.point-color-picker {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+    transition: border-color 0.2s;
+}
+
+.point-color-picker:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.point-color-picker::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.point-color-picker::-webkit-color-swatch {
+    border: none;
+    border-radius: 50%;
+}
+
+.point-color-picker::-moz-color-swatch {
+    border: none;
+    border-radius: 50%;
+}
+
+.status-hint {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: rgba(14, 165, 233, 0.1);
+    border: 1px solid rgba(14, 165, 233, 0.2);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: var(--accent-hover);
+    text-align: center;
+    animation: fadeIn 0.2s ease;
+    line-height: 1.4;
+}
+
+.status-hint.hidden {
+    display: none;
 }
 
 .delete-btn {
