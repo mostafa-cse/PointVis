@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coordinate Visualizer</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Libre+Baskerville:ital@0;1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <button id="toggle-sidebar" class="toggle-btn" title="Toggle Sidebar">
+            <svg class="chevron-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+        </button>
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h1>Point Visualizer</h1>
+                <p>Click on the grid intersections to add mathematical points.</p>
+                
+                <div class="mode-toggle">
+                    <button id="mode-point" class="mode-btn active" title="Add Point">Add</button>
+                    <button id="mode-line" class="mode-btn" title="Connect Points">Line</button>
+                    <button id="mode-polygon" class="mode-btn" title="Draw Polygon">Poly</button>
+                    <button id="mode-circle" class="mode-btn" title="Draw Circle">Circle</button>
+                    <button id="mode-reflect" class="mode-btn" title="Reflect about Point">Reflect</button>
+                    <button id="mode-dilate" class="mode-btn" title="Dilate from Point">Dilate</button>
+                    <button id="mode-move" class="mode-btn" title="Move Canvas/Points">Move</button>
+                </div>
+                
+                <div id="line-type-container" class="line-type-container hidden">
+                    <label for="line-type">Type:</label>
+                    <select id="line-type" class="line-type-select">
+                        <option value="segment">Segment (Finite)</option>
+                        <option value="line">Line (Infinite)</option>
+                        <option value="ray">Ray (Half-Infinite)</option>
+                        <option value="vector">Vector (Directed)</option>
+                        <option value="perp-bisector">Perpendicular Bisector</option>
+                        <option value="length">Given Length</option>
+                    </select>
+                </div>
+                
+                <div class="best-fit-container">
+                    <label>
+                        <input type="checkbox" id="best-fit-toggle">
+                        Show Best Fit Line
+                    </label>
+                </div>
+            </div>
+            
+            <div class="points-section">
+                <h2>Added Points</h2>
+                <ul id="points-list" class="points-list">
+                    <li class="empty-state">No points added yet.</li>
+                </ul>
+            </div>
+            
+            <div class="actions">
+                <button id="clearBtn" class="danger">Clear Canvas</button>
+                <div class="export-actions">
+                    <button id="exportImageBtn" class="secondary">Export PNG</button>
+                    <button id="exportCsvBtn" class="secondary">Export CSV</button>
+                </div>
+            </div>
+        </aside>
+        
+        <main class="graph-container">
+            <div class="canvas-wrapper">
+                <canvas id="graph-canvas"></canvas>
+                <div id="tooltip" class="tooltip hidden"></div>
+            </div>
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
