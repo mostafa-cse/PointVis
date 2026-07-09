@@ -136,8 +136,8 @@ body {
 }
 
 .mode-toggle {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(75px, 1fr));
     background: rgba(0, 0, 0, 0.2);
     border-radius: 8px;
     padding: 4px;
@@ -145,10 +145,9 @@ body {
 }
 
 .mode-btn {
-    flex: 1;
     background: transparent;
     border: none;
-    padding: 8px 12px;
+    padding: 8px 6px;
     color: var(--text-secondary);
     border-radius: 6px;
     font-size: 0.85rem;
