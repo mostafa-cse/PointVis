@@ -19,3 +19,12 @@ For example, using Python:
 python3 -m http.server 8000
 ```
 Then navigate to `http://localhost:8000` in your web browser.
+
+---
+
+### Author
+Created by **M0stafa**
+- [GitHub](https://github.com/mostafa-cse/)
+- [LinkedIn](https://www.linkedin.com/in/m0stafa-kamal/)
+- [Vjudge](https://vjudge.net/user/M00stafa)
+- [Codeforces](https://codeforces.com/profile/...-_-...)
