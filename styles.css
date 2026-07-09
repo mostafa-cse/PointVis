@@ -294,8 +294,8 @@ body {
 }
 
 .credits-section {
-    margin-top: 32px;
-    padding-top: 24px;
+    margin-top: 64px;
+    padding-top: 32px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     display: flex;
     flex-direction: column;
