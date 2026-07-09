@@ -16,6 +16,8 @@ const bestFitToggle = document.getElementById('best-fit-toggle');
 const toggleSidebarBtn = document.getElementById('toggle-sidebar');
 const sidebar = document.getElementById('sidebar');
 const statusHint = document.getElementById('status-hint');
+const manualPointInput = document.getElementById('manual-point-input');
+const manualPointAddBtn = document.getElementById('manual-point-add');
 
 // Configuration
 const config = {
@@ -91,6 +93,11 @@ function init() {
     bestFitToggle.addEventListener('change', draw);
     
     toggleSidebarBtn.addEventListener('click', toggleSidebar);
+    
+    manualPointAddBtn.addEventListener('click', handleManualPointAdd);
+    manualPointInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleManualPointAdd();
+    });
     
     // Automatically redraw when the container resizes (e.g. during sidebar toggle animation)
     const resizeObserver = new ResizeObserver(() => {
@@ -767,6 +774,14 @@ function handleCanvasClick(e) {
     });
 
     if (currentMode === 'add') {
+        if (clickedPoint) {
+            setMode('line');
+            connectingPointId = clickedPoint.id;
+            draw();
+            updateStatusHint();
+            return;
+        }
+        
         let { x, y } = screenToMath(clickX, clickY);
         const roundedX = Math.round(x);
         const roundedY = Math.round(y);
@@ -827,34 +842,40 @@ function handleCanvasClick(e) {
             updateStatusHint();
         }
     } else if (currentMode === 'circle') {
-        if (clickedPoint) {
-            if (circleCenterPointId === null) {
-                // First click: set the center
+        if (circleCenterPointId === null) {
+            // First click: set the center
+            if (clickedPoint) {
                 circleCenterPointId = clickedPoint.id;
             } else {
-                // Second click on a point: use distance as radius
-                const centerPt = points.find(p => p.id === circleCenterPointId);
-                if (centerPt) {
-                    const r = Math.hypot(clickedPoint.x - centerPt.x, clickedPoint.y - centerPt.y);
-                    if (r > 0) {
-                        circles.push({
-                            id: Math.random(),
-                            pointId: circleCenterPointId,
-                            r: r,
-                            color: centerPt.color || config.colors.point
-                        });
-                    }
+                let { x, y } = screenToMath(clickX, clickY);
+                const roundedX = Math.round(x);
+                const roundedY = Math.round(y);
+                if (Math.abs(x - roundedX) < config.snapDistance && Math.abs(y - roundedY) < config.snapDistance) {
+                    x = roundedX;
+                    y = roundedY;
+                } else {
+                    x = Number(x.toFixed(1));
+                    y = Number(y.toFixed(1));
                 }
-                circleCenterPointId = null;
+                const p = { id: nextPointId++, x, y, color: config.colors.point };
+                points.push(p);
+                updateSidebar();
+                circleCenterPointId = p.id;
             }
-            draw();
-            updateStatusHint();
-        } else if (circleCenterPointId !== null) {
-            // Second click on empty space: use cursor distance as radius
+        } else {
+            // Second click: use distance as radius
             const centerPt = points.find(p => p.id === circleCenterPointId);
             if (centerPt) {
-                const hoverMath = screenToMath(clickX, clickY);
-                const r = Math.hypot(hoverMath.x - centerPt.x, hoverMath.y - centerPt.y);
+                let targetX, targetY;
+                if (clickedPoint) {
+                    targetX = clickedPoint.x;
+                    targetY = clickedPoint.y;
+                } else {
+                    const hoverMath = screenToMath(clickX, clickY);
+                    targetX = hoverMath.x;
+                    targetY = hoverMath.y;
+                }
+                const r = Math.hypot(targetX - centerPt.x, targetY - centerPt.y);
                 if (r > 0) {
                     circles.push({
                         id: Math.random(),
@@ -865,9 +886,9 @@ function handleCanvasClick(e) {
                 }
             }
             circleCenterPointId = null;
-            draw();
-            updateStatusHint();
         }
+        draw();
+        updateStatusHint();
     } else if (currentMode === 'polygon') {
         if (clickedPoint) {
             // Check if clicking the FIRST point of the pending polygon to close it

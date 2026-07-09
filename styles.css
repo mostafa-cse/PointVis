@@ -223,10 +223,70 @@ body {
 }
 
 .points-section {
-    flex-grow: 1;
+    flex: 1;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    min-height: 0;
+}
+
+.manual-input-section {
+    margin: 12px 0 16px 0;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.manual-input-section label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.manual-input-row {
+    display: flex;
+    gap: 8px;
+}
+
+.manual-input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.manual-input:focus {
+    border-color: var(--accent-color);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.manual-input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.manual-add-btn {
+    width: 36px;
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.manual-add-btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
 }
 
 .points-section h2 {
