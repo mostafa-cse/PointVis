@@ -176,11 +176,14 @@ function updateOrigin() {
 }
 
 function handleManualPointAdd() {
-    const val = manualPointInput.value.trim();
+    let val = manualPointInput.value.trim();
     if (!val) return;
     
+    // Strip parentheses and brackets
+    val = val.replace(/[()\[\]]/g, '');
+    
     // Split by comma or space
-    const parts = val.split(/[,\s]+/);
+    const parts = val.split(/[,\s]+/).filter(p => p !== '');
     if (parts.length >= 2) {
         const x = parseFloat(parts[0]);
         const y = parseFloat(parts[1]);
@@ -202,8 +205,11 @@ function handleManualPointAdd() {
             draw();
             updateSidebar();
             updateStatusHint();
+            return;
         }
     }
+    
+    alert("Please enter valid coordinates, for example: 3, -2");
 }
 
 // Coordinate transforms
