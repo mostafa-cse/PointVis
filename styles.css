@@ -137,6 +137,7 @@ body {
 
 .mode-toggle {
     display: flex;
+    flex-wrap: wrap;
     background: rgba(0, 0, 0, 0.2);
     border-radius: 8px;
     padding: 4px;

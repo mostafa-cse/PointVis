@@ -602,9 +602,13 @@ function drawPoints() {
         const screenCoords = mathToScreen(point.x, point.y);
         const pColor = point.color || config.colors.point;
         
+        const isSelected = (point.id === draggingPointId || point.id === transformSourcePointId || point.id === connectingPointId);
+        
         // Glow effect
         ctx.beginPath();
-        ctx.arc(screenCoords.x, screenCoords.y, config.pointRadius * 2.5, 0, Math.PI * 2);
+        const glowRadius = isSelected ? config.pointRadius * 3.5 : config.pointRadius * 2.5;
+        ctx.arc(screenCoords.x, screenCoords.y, glowRadius, 0, Math.PI * 2);
+        
         // Extract RGB and apply alpha for glow
         const isHex = pColor.startsWith('#');
         let r, g, b;
@@ -616,8 +620,17 @@ function drawPoints() {
             // Default blue fallback
             r = 14; g = 165; b = 233;
         }
-        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.4)`;
+        
+        const glowAlpha = isSelected ? 0.8 : 0.4;
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${glowAlpha})`;
         ctx.fill();
+        
+        if (isSelected) {
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = pColor;
+        } else {
+            ctx.shadowBlur = 0;
+        }
         
         // Point
         ctx.beginPath();
@@ -628,12 +641,8 @@ function drawPoints() {
         ctx.lineWidth = 1.5;
         ctx.stroke();
         
-        if (point.id === draggingPointId || point.id === transformSourcePointId) {
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = pColor;
-        } else {
-            ctx.shadowBlur = 0;
-        }
+        // Reset shadow for text
+        ctx.shadowBlur = 0;
         
         // Label
         ctx.font = config.fonts.math;
