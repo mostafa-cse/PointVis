@@ -66,6 +66,10 @@ function init() {
     window.addEventListener('resize', resizeCanvas);
     canvas.addEventListener('click', handleCanvasClick);
     canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseleave', () => {
+        tooltip.classList.add('hidden');
+        hoverScreenCoords = null;
+    });
     canvas.addEventListener('mousedown', handleMouseDown);
     window.addEventListener('mouseup', handleMouseUp);
     
@@ -890,6 +894,7 @@ function handleMouseMove(e) {
         panStartY = e.clientY;
         updateOrigin();
         draw();
+        tooltip.classList.add('hidden');
         return;
     }
     
@@ -968,7 +973,16 @@ function handleMouseMove(e) {
             canvas.style.cursor = isPanning ? 'grabbing' : 'grab';
         }
         
-        tooltip.classList.add('hidden');
+        // Show math coordinates of cursor position
+        const mathPos = screenToMath(clickX, clickY);
+        const dispX = Math.abs(mathPos.x - Math.round(mathPos.x)) < config.snapDistance
+            ? Math.round(mathPos.x) : Number(mathPos.x.toFixed(1));
+        const dispY = Math.abs(mathPos.y - Math.round(mathPos.y)) < config.snapDistance
+            ? Math.round(mathPos.y) : Number(mathPos.y.toFixed(1));
+        tooltip.textContent = `(${dispX}, ${dispY})`;
+        tooltip.style.left = `${e.clientX}px`;
+        tooltip.style.top = `${e.clientY}px`;
+        tooltip.classList.remove('hidden');
     }
     
     // Redraw to update temporary line or polygon preview
